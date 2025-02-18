@@ -8,4 +8,8 @@ class CollectionController extends GetxController {
     // rethink about making this observable
     this.collection = collection.obs;
   }
+
+  void reInitialize(Collection collection) {
+    this.collection = collection.obs;
+  }
 }

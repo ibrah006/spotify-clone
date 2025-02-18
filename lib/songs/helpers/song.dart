@@ -4,7 +4,7 @@ class Song {
   String name, id;
   String? artist;
   String duration;
-  String previewUrl;
+  String? previewUrl;
 
   Song(
       {required this.name,

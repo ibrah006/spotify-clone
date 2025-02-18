@@ -16,6 +16,8 @@ class MyApp extends StatelessWidget {
     fontWeight: FontWeight.bold,
   );
 
+  static const primaryColor = Color(0xFF1ed760);
+
   static final navTitleStyle = titleLarge;
 
   static final titleMedium = TextStyle(
@@ -44,6 +46,17 @@ class MyApp extends StatelessWidget {
         "/playlist": (context) => PlaylistPage()
       },
       theme: ThemeData(
+        elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ButtonStyle(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                minimumSize: WidgetStatePropertyAll(Size.zero),
+                padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 16, vertical: 5)),
+                backgroundColor: WidgetStatePropertyAll(primaryColor),
+                iconColor: WidgetStatePropertyAll(Colors.black),
+                foregroundColor: WidgetStatePropertyAll(Colors.black),
+                overlayColor: WidgetStatePropertyAll(
+                    const Color.fromARGB(255, 29, 204, 90)))),
         progressIndicatorTheme: ProgressIndicatorThemeData(
             color: Colors.white, linearTrackColor: Colors.grey.shade700),
         iconTheme: IconThemeData(color: Colors.white),

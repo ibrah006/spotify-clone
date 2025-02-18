@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get/instance_manager.dart';
 import 'package:spotify/albums/helpers/album.dart';
 import 'package:spotify/commons/collection/helpers/collection.dart';
@@ -36,9 +37,9 @@ class _CollectionPageState extends State<CollectionPage> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    final collection = collectionController.collection.value;
+    setLazyPuts();
 
-    print("song url: ${selectedSongController.song.value.previewUrl}");
+    final collection = collectionController.collection.value;
 
     return Scaffold(
         body: Stack(
@@ -183,6 +184,7 @@ class _CollectionPageState extends State<CollectionPage> {
                     ),
 
                     SizedBox(height: 30),
+
                     // Songs List
                     CustomTable(
                         columns: [
@@ -231,12 +233,9 @@ class _CollectionPageState extends State<CollectionPage> {
     ));
   }
 
-  @override
-  void didChangeDependencies() {
-    // TODO: implement didChangeDependencies
-    super.didChangeDependencies();
-
+  void setLazyPuts() {
     late final Collection collection;
+
     try {
       // if the argument passed is an album then, pull the arg as an Album  -Album page
       collection = ModalRoute.of(context)!.settings.arguments as Album;
@@ -245,14 +244,105 @@ class _CollectionPageState extends State<CollectionPage> {
       collection = ModalRoute.of(context)!.settings.arguments as Playlist;
     }
 
-    // Put the CollectionController in the Get.lazyPut - making it available only in this screen
-    collectionController = CollectionController(collection);
-    Get.lazyPut<CollectionController>(() => collectionController);
+    try {
+      if (collection.id ==
+          Get.find<CollectionController>().collection.value.id) {
+        collectionController = CollectionController(collection);
+        selectedSongController = Get.find<SelectedSongController>();
+        return;
+      }
+    } catch (e) {
+      // Error caused due to getting collection from Get as we never set it
+      print(
+          "Error caused due to getting collection from Get as we never set it, actual: $e");
+    }
+
+    print("collection and selected song need re initialization");
+
+    // Availability of collection provider in context
+    setLazyPutCollection(collection);
 
     // initially we want the selected song to be the first song
-    final selectedSong = collection.songs.first;
-    // Subscribe to the collection's songs change to update the selected song
-    selectedSongController = SelectedSongController(selectedSong);
-    Get.lazyPut(() => selectedSongController);
+    // Availability of selected song provider in context
+    setLazyPutSelectedSong(isFirstSongSelected: true);
+  }
+
+  /// Put the CollectionController in the Get.lazyPut - making it available only in this screen
+  void setLazyPutCollection(Collection collection) {
+    try {
+      print(
+          "collection (arg): ${collection.id} ${collection.songs.first.name}, from get ${Get.find<CollectionController>().collection.value.id} ${Get.find<CollectionController>().collection.value.songs.first.name}");
+    } catch (e) {
+      // Error caused due to getting collection from Get as we never set it
+      print(
+          "Error caused due to getting collection from Get as we never set it, actual: $e");
+    }
+    try {
+      collectionController = CollectionController(collection);
+    } catch (e) {
+      // on Late Initialization Error. field has not been initialized
+      print("Expected Late initialization Error, got: $e");
+      collectionController.reInitialize(collection);
+    }
+
+    Get.lazyPut<CollectionController>(() => collectionController);
+  }
+
+  /// Subscribe to the collection's songs change to update the selected song
+  void setLazyPutSelectedSong(
+      {bool isFirstSongSelected = false, String? songId, int? songIndex}) {
+    if (!isFirstSongSelected && songId == null && songIndex == null) {
+      throw ArgumentError.notNull(
+          "isFirstSongSelected = false, songId = null, songIndex = null. All these parameters cannot be null/false at the same time. One of these parameters need to be fulfilled");
+    }
+
+    late final Song selectedSong;
+
+    final Collection collection = collectionController.collection.value;
+
+    if (isFirstSongSelected) {
+      selectedSong = collection.songs.first;
+    } else {
+      if (songId != null) {
+        selectedSong = collection.songs.firstWhere((song) => song.id == songId);
+      } else if (songIndex != null) {
+        selectedSong = collection.songs
+            .firstWhere((song) => collection.songs.indexOf(song) == songIndex);
+      }
+    }
+
+    try {
+      selectedSongController = SelectedSongController(selectedSong);
+    } catch (e) {
+      // on Late Initialization Error. field has not been initialized
+      selectedSongController.reInitialize(selectedSong);
+    }
+    Get.lazyPut<SelectedSongController>(() => selectedSongController);
+  }
+
+  @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    super.didChangeDependencies();
+
+    print('didChangeDependencies');
+
+    // Using Getx to set "Lazy puts" for collection and selected song for...
+    // their usage from this widget custom child components
+    setLazyPuts();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+
+    collectionController.dispose();
+    try {
+      selectedSongController.dispose();
+    } catch (e) {
+      // Error occurred when disposing selectedSongController
+      print("to be debugged, Error: $e");
+    }
   }
 }

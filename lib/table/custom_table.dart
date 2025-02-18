@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/instance_manager.dart';
+import 'package:spotify/commons/collection/state_controllers/collection_controller.dart';
+import 'package:spotify/commons/collection/state_controllers/selected_song_controller.dart';
 import 'package:spotify/table/table_column.dart';
 
 class CustomTable extends StatelessWidget {
@@ -42,7 +45,7 @@ class CustomTable extends StatelessWidget {
           final tableRow = rows[index];
 
           return InkWell(
-            onTap: () {},
+            onTap: () => selectSong(index),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Row(
@@ -58,5 +61,13 @@ class CustomTable extends StatelessWidget {
         })
       ],
     );
+  }
+
+  void selectSong(int index) {
+    final selectedSongController = Get.find<SelectedSongController>();
+    final collectionController = Get.find<CollectionController>();
+
+    selectedSongController.song.value =
+        collectionController.collection.value.songs[index];
   }
 }

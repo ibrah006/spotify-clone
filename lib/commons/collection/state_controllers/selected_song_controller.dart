@@ -7,4 +7,8 @@ class SelectedSongController extends GetxController {
   SelectedSongController(Song song) {
     this.song = song.obs;
   }
+
+  void reInitialize(Song song) {
+    this.song = song.obs;
+  }
 }
