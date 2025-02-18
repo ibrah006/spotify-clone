@@ -4,6 +4,9 @@ import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:spotify/commons/collection/providers/collection_provider.dart';
 import 'package:spotify/commons/collection/providers/selected_song_provider.dart';
+import 'package:spotify/commons/state/stream_handler.dart';
+import 'package:spotify/extensions.dart';
+import 'package:spotify/songs/helpers/song.dart';
 
 class SongTrackNavigation extends StatefulWidget {
   const SongTrackNavigation({super.key});
@@ -13,13 +16,18 @@ class SongTrackNavigation extends StatefulWidget {
 }
 
 class _SongTrackNavigationState extends State<SongTrackNavigation> {
+  late Song selectedSong;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
     final collectionProvider = context.read<CollectionProvider>();
     final collection = collectionProvider.collection;
-    final selectedSong = context.read<SelectedSongProvider>().selectedSong;
+
+    print("selected song: ${selectedSong.previewUrl}");
+
+    print("buffering progress: ${bufferingProgress}");
 
     return Align(
         alignment: Alignment.bottomCenter,
@@ -107,20 +115,31 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
                         ],
                       ),
                     SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Text("0:00", style: textTheme.bodySmall),
-                        SizedBox(width: 5),
-                        Expanded(
-                          child: LinearProgressIndicator(
-                            value: bufferingProgress,
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                        ),
-                        SizedBox(width: 5),
-                        Text(selectedSong.duration, style: textTheme.bodySmall)
-                      ],
-                    ),
+                    StreamBuilder<StreamHandler>(
+                        stream: null,
+                        builder: (context, snapshot) {
+                          return Row(
+                            children: [
+                              Text(
+                                  _audioPlayer.position.inMilliseconds
+                                      .msToDisplayDuration(),
+                                  style: textTheme.bodySmall),
+                              SizedBox(width: 5),
+                              Expanded(
+                                child: LinearProgressIndicator(
+                                  value: _audioPlayer.duration != null
+                                      ? (_audioPlayer.position.inMilliseconds /
+                                          selectedSong.durationRaw)
+                                      : 0.01,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                              ),
+                              SizedBox(width: 5),
+                              Text(selectedSong.duration,
+                                  style: textTheme.bodySmall)
+                            ],
+                          );
+                        }),
                   ],
                 ),
               )
@@ -139,7 +158,9 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
     if (_audioPlayer.playing) {
       _audioPlayer.pause();
     } else {
-      _audioPlayer.play();
+      if (selectedSong.previewUrl != null) {
+        _audioPlayer.play();
+      }
     }
     setState(() {});
   }
@@ -150,8 +171,24 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
 
     _audioPlayer = AudioPlayer();
 
+    selectedSong = context.read<SelectedSongProvider>().selectedSong;
+    if (selectedSong.previewUrl != null) {
+      _audioPlayer.setUrl(selectedSong.previewUrl!);
+    }
+
+    // assign this stream listening to a variable and then unsubscribe from listening to this event when not needed
+    _audioPlayer.positionStream.listen((duration) {
+      if (_audioPlayer.playerState.playing) {
+        setState(() {});
+      }
+    });
+
     // Listen for the playback state to determine buffering
     _audioPlayer.playerStateStream.listen((state) {
+      if (_audioPlayer.processingState == ProcessingState.completed) {
+        setState(() {});
+      }
+
       // Check if buffering is happening based on ProcessingState
       if (state.processingState == ProcessingState.buffering) {
         setState(() {

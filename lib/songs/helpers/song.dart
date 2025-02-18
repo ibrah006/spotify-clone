@@ -6,6 +6,10 @@ class Song {
   String duration;
   String? previewUrl;
 
+  int _durationMilliseconds = 0;
+
+  int get durationRaw => _durationMilliseconds;
+
   Song(
       {required this.name,
       required this.id,
@@ -23,6 +27,6 @@ class Song {
       artist: json['artists'][0]['name'],
       duration: (json["duration_ms"] as int).msToDisplayDuration(),
       previewUrl: json['preview_url'],
-    );
+    ).._durationMilliseconds = json['duration_ms'] as int;
   }
 }

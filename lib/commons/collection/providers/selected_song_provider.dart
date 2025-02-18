@@ -3,8 +3,18 @@ import 'package:provider/provider.dart';
 import 'package:spotify/commons/collection/providers/collection_provider.dart';
 import 'package:spotify/songs/helpers/song.dart';
 
+// TODO: create a constructor: for accessing from collection (initial song
+
 class SelectedSongProvider extends ChangeNotifier {
-  late Song selectedSong;
+  late Song _selectedSong;
+
+  set selectedSong(Song song) {
+    _selectedSong = song;
+    isPlaying = false;
+    notifyListeners();
+  }
+
+  Song get selectedSong => _selectedSong;
 
   /// [selectFirstSong] will read the first song from CollectionProvider (if inside any of the CollectionPage i.e., Album or Playlist)
   SelectedSongProvider(
@@ -29,4 +39,6 @@ class SelectedSongProvider extends ChangeNotifier {
       }
     }
   }
+
+  bool isPlaying = false;
 }

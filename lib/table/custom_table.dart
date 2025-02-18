@@ -42,7 +42,9 @@ class CustomTable extends StatelessWidget {
           final tableRow = rows[index];
 
           return InkWell(
-            onTap: () {},
+            onTap: () {
+              // context.read<Selec>()
+            },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Row(
