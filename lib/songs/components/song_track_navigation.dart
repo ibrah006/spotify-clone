@@ -6,6 +6,7 @@ import 'package:spotify/commons/collection/providers/collection_provider.dart';
 import 'package:spotify/commons/collection/providers/selected_song_provider.dart';
 import 'package:spotify/commons/state/stream_handler.dart';
 import 'package:spotify/extensions.dart';
+import 'package:spotify/songs/helpers/player_states.dart';
 import 'package:spotify/songs/helpers/song.dart';
 
 class SongTrackNavigation extends StatefulWidget {
@@ -25,9 +26,23 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
     final collectionProvider = context.read<CollectionProvider>();
     final collection = collectionProvider.collection;
 
-    print("selected song: ${selectedSong.previewUrl}");
+    final isPlaying = context.read<SelectedSongProvider>().playerState ==
+        PlayerStates.playing;
 
-    print("buffering progress: ${bufferingProgress}");
+    final previewEnded = context.read<SelectedSongProvider>().playerState ==
+        PlayerStates.previewEnd;
+
+    try {
+      selectedSong;
+    } catch (e) {
+      print(
+          "expected: selectedSong not initialized yet i.e., there is no song to be played, got: $e");
+
+      // Simple display nothing when there is no song selected
+      return SizedBox();
+    }
+
+    // print("song url: ${selectedSong.previewUrl}");
 
     return Align(
         alignment: Alignment.bottomCenter,
@@ -66,17 +81,27 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (selectedSong.previewUrl == null)
-                      ElevatedButton(
-                          onPressed: () {},
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text("Open in Spotify"),
-                              SizedBox(width: 10),
-                              Icon(CupertinoIcons.share)
-                            ],
-                          ))
+                    if ((selectedSong.previewUrl == null) || previewEnded)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (previewEnded)
+                            InkWell(
+                                onTap: playPauseAudio,
+                                child: Icon(CupertinoIcons.refresh_thick)),
+                          SizedBox(width: 10),
+                          ElevatedButton(
+                              onPressed: () {},
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text("Open in Spotify"),
+                                  SizedBox(width: 6),
+                                  Icon(CupertinoIcons.link)
+                                ],
+                              )),
+                        ],
+                      )
                     else
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -100,7 +125,7 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
                                         WidgetStatePropertyAll(Colors.black),
                                   ),
                                   icon: Icon(
-                                      _audioPlayer.playing
+                                      isPlaying
                                           ? CupertinoIcons.pause_fill
                                           : CupertinoIcons.play_fill,
                                       size: 20)),
@@ -130,7 +155,7 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
                                   value: _audioPlayer.duration != null
                                       ? (_audioPlayer.position.inMilliseconds /
                                           selectedSong.durationRaw)
-                                      : 0.01,
+                                      : 0.0,
                                   borderRadius: BorderRadius.circular(5),
                                 ),
                               ),
@@ -155,13 +180,41 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
   double bufferingProgress = 0.0;
 
   playPauseAudio() {
-    if (_audioPlayer.playing) {
-      _audioPlayer.pause();
-    } else {
-      if (selectedSong.previewUrl != null) {
-        _audioPlayer.play();
-      }
+    bool resetUrl = false;
+    switch (context.read<SelectedSongProvider>().playerState) {
+      case PlayerStates.playing:
+        () {
+          _audioPlayer.pause();
+          context.read<SelectedSongProvider>().playerState =
+              PlayerStates.paused;
+          setState(() {});
+          return;
+        };
+      case PlayerStates.completed || PlayerStates.previewEnd:
+        if (selectedSong.previewUrl != null) resetUrl = true;
+      case PlayerStates.paused:
+      case PlayerStates.idle:
     }
+
+    // for all other cases i.e., completed, previewEnd, paused, idle
+    if (selectedSong.previewUrl != null) {
+      if (resetUrl) {
+        _audioPlayer.setUrl(selectedSong.previewUrl!);
+      }
+
+      context.read<SelectedSongProvider>().playerState = PlayerStates.playing;
+      _audioPlayer.play();
+    }
+
+    // if (_audioPlayer.playing) {
+    //   _audioPlayer.pause();
+    //   context.read<SelectedSongProvider>().playerState = PlayerStates.playing;
+    // } else {
+    //   if (selectedSong.previewUrl != null) {
+    //     context.read<SelectedSongProvider>().playerState = PlayerStates.paused;
+    //     _audioPlayer.play();
+    //   }
+    // }
     setState(() {});
   }
 
@@ -171,24 +224,40 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
 
     _audioPlayer = AudioPlayer();
 
-    selectedSong = context.read<SelectedSongProvider>().selectedSong;
+    try {
+      selectedSong = context.read<SelectedSongProvider>().selectedSong ??
+          context.read<CollectionProvider>().collection.songs.first;
+    } catch (e) {
+      print(
+          "Expected: error in the second case of ternary statement. Not a CollectionPage (i.e., Album or Playlist) for selecting the first song, got: $e");
+    }
+
     if (selectedSong.previewUrl != null) {
       _audioPlayer.setUrl(selectedSong.previewUrl!);
+      context.read<SelectedSongProvider>().playerState = PlayerStates.idle;
     }
 
     // assign this stream listening to a variable and then unsubscribe from listening to this event when not needed
     _audioPlayer.positionStream.listen((duration) {
-      if (_audioPlayer.playerState.playing) {
-        setState(() {});
+      if (_audioPlayer.duration != null) {
+        if (_audioPlayer.position.inMilliseconds == selectedSong.durationRaw) {
+          context.read<SelectedSongProvider>().playerState =
+              PlayerStates.completed;
+        } else if (_audioPlayer.duration!.inMilliseconds ==
+            _audioPlayer.position.inMilliseconds) {
+          // The audio has finished playing
+          context.read<SelectedSongProvider>().playerState =
+              PlayerStates.previewEnd;
+        }
+      } else if (_audioPlayer.playerState.playing) {
+        context.read<SelectedSongProvider>().isPlaying = true;
+        context.read<SelectedSongProvider>().playerState = PlayerStates.playing;
       }
+      setState(() {});
     });
 
     // Listen for the playback state to determine buffering
     _audioPlayer.playerStateStream.listen((state) {
-      if (_audioPlayer.processingState == ProcessingState.completed) {
-        setState(() {});
-      }
-
       // Check if buffering is happening based on ProcessingState
       if (state.processingState == ProcessingState.buffering) {
         setState(() {
@@ -213,6 +282,7 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
 
   @override
   void dispose() {
+    if (_audioPlayer.playing) _audioPlayer.pause();
     _audioPlayer.dispose();
     super.dispose();
   }

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:spotify/albums/helpers/album.dart';
 import 'package:spotify/commons/collection/helpers/collection.dart';
 import 'package:spotify/commons/collection/providers/collection_provider.dart';
-import 'package:spotify/commons/collection/providers/selected_song_provider.dart';
 import 'package:spotify/playlists/helpers/playlist.dart';
 import 'package:spotify/songs/components/song_track_navigation.dart';
 import 'package:spotify/songs/helpers/song.dart';
@@ -29,7 +28,6 @@ class _CollectionPageState extends State<CollectionPage> {
   // late Song selectedSong;
 
   late final CollectionProvider collectionProvider;
-  late final SelectedSongProvider selectedSongProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +37,6 @@ class _CollectionPageState extends State<CollectionPage> {
         body: MultiProvider(
       providers: [
         Provider<CollectionProvider>(create: (_) => collectionProvider),
-        ChangeNotifierProvider<SelectedSongProvider>(
-            create: (_) => selectedSongProvider),
       ],
       builder: (context, child) {
         final collection = collectionProvider.collection;
@@ -266,8 +262,5 @@ class _CollectionPageState extends State<CollectionPage> {
 
     // initialize collectionProvider
     collectionProvider = CollectionProvider(collection);
-
-    // initialize selectedSongProvider
-    selectedSongProvider = SelectedSongProvider(song: collection.songs.first);
   }
 }

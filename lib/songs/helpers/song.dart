@@ -8,6 +8,7 @@ class Song {
 
   int _durationMilliseconds = 0;
 
+  /// Duration of the [Song] in milliseconds
   int get durationRaw => _durationMilliseconds;
 
   Song(
