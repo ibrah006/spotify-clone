@@ -180,16 +180,17 @@ class _SongTrackNavigationState extends State<SongTrackNavigation> {
   double bufferingProgress = 0.0;
 
   playPauseAudio() {
+    void pause() {
+      _audioPlayer.pause();
+      context.read<SelectedSongProvider>().playerState = PlayerStates.paused;
+      setState(() {});
+      return;
+    }
+
     bool resetUrl = false;
     switch (context.read<SelectedSongProvider>().playerState) {
       case PlayerStates.playing:
-        () {
-          _audioPlayer.pause();
-          context.read<SelectedSongProvider>().playerState =
-              PlayerStates.paused;
-          setState(() {});
-          return;
-        };
+        return pause();
       case PlayerStates.completed || PlayerStates.previewEnd:
         if (selectedSong.previewUrl != null) resetUrl = true;
       case PlayerStates.paused:
