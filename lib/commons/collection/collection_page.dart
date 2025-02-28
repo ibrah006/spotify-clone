@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -49,82 +51,91 @@ class _CollectionPageState extends State<CollectionPage> {
                 alignment: Alignment.topCenter,
                 children: [
                   Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              CollectionPage.collectionCoverColor,
-                              CollectionPage.collectionCoverColor.withAlpha(50)
-                            ],
-                            stops: [
-                              .75,
-                              1
-                            ]),
-                      ),
                       padding:
                           EdgeInsets.symmetric(vertical: 30, horizontal: 20)
                               .copyWith(bottom: 120),
-                      child: SafeArea(
-                        child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              // Album cover
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  width: 150,
-                                  collection.coverImage,
-                                  fit: BoxFit.cover,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                            opacity: .5,
+                            fit: BoxFit.fill,
+                            image: NetworkImage(
+                                collectionProvider.collection.coverImage)),
+                        // gradient: LinearGradient(
+                        //     begin: Alignment.topCenter,
+                        //     end: Alignment.bottomCenter,
+                        //     colors: [
+                        //       CollectionPage.collectionCoverColor,
+                        //       CollectionPage.collectionCoverColor.withAlpha(50)
+                        //     ],
+                        //     stops: [
+                        //       .75,
+                        //       1
+                        //     ]),
+                      ),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                        child: SafeArea(
+                          child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                // Album cover
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    width: 150,
+                                    collection.coverImage,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 16),
-                              // Album title and artist
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      widget.title,
-                                      style: textTheme.bodyLarge!
-                                          .copyWith(color: Colors.white),
-                                    ),
-                                    SizedBox(height: 5),
-                                    Text(
-                                      collection.title,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: textTheme.displayMedium,
-                                    ),
-                                    SizedBox(height: 10),
-                                    Row(
-                                      children: [
-                                        if (collection.creator?.image !=
-                                            null) ...[
-                                          // Artist image
-                                          ClipOval(
-                                              child: Image.network(
-                                                  collection.coverImage,
-                                                  width: 26)),
-                                          SizedBox(width: 5),
-                                        ],
-                                        Expanded(
-                                          child: Text(
-                                            collection.creator?.name ??
-                                                "Unknown",
-                                            style: textTheme.titleSmall!
-                                                .copyWith(
-                                                    overflow:
-                                                        TextOverflow.ellipsis),
+                                SizedBox(width: 16),
+                                // Album title and artist
+                                Expanded(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        widget.title,
+                                        style: textTheme.bodyLarge!
+                                            .copyWith(color: Colors.white),
+                                      ),
+                                      SizedBox(height: 5),
+                                      Text(
+                                        collection.title,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: textTheme.displayMedium,
+                                      ),
+                                      SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          if (collection.creator?.image !=
+                                              null) ...[
+                                            // Artist image
+                                            ClipOval(
+                                                child: Image.network(
+                                                    collection.coverImage,
+                                                    width: 26)),
+                                            SizedBox(width: 5),
+                                          ],
+                                          Expanded(
+                                            child: Text(
+                                              collection.creator?.name ??
+                                                  "Unknown",
+                                              style: textTheme.titleSmall!
+                                                  .copyWith(
+                                                      overflow: TextOverflow
+                                                          .ellipsis),
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ]),
+                              ]),
+                        ),
                       )),
 
                   // Body content

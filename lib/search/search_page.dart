@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:spotify/search/helpers/genre_info.dart';
 import 'package:spotify/search/sections/genres_section.dart';
 
-class SearchPage extends StatelessWidget {
+class SearchPage extends StatefulWidget {
   SearchPage({super.key});
 
+  @override
+  State<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
   final List<GenreInfo> yourGenres = [
     GenreInfo(title: "Indie", imageName: "indie.png", color: Color(0xFFe13401)),
     GenreInfo(title: "R&B", imageName: "R&B.jpg", color: Color(0xFF7358fe)),
